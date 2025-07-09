@@ -26,7 +26,8 @@
   },
   "dependencies": {
     "expo-auth-session": "^6.2.1",
-    "expo-web-browser": "^14.2.0"
+    "expo-web-browser": "^14.2.0",
+    "react-native-svg": "^15.11.2"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
