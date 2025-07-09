@@ -10,6 +10,8 @@ export type AppleLoginButtonProps = {
     children?: React.ReactNode;
     style?: ViewStyle;
     textStyle?: TextStyle;
+    onSuccess?: (userData: any) => void;
+    onError?: (error: any) => void;
 };
 
 const AppleIcon = () => (
@@ -29,7 +31,9 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     finalRedirectUri,
     children,
     style,
-    textStyle
+    textStyle,
+    onSuccess,
+    onError
 }: AppleLoginButtonProps) => {
     const [loading, setLoading] = React.useState(false);
     const baseUrl = 'https://services.cavos.xyz';
@@ -63,15 +67,32 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                 if (userDataStr) {
                     const userData = JSON.parse(decodeURIComponent(userDataStr));
                     console.log('User data extracted:', userData);
-                    // El usuario puede manejar estos datos en su app
+                    // Llamar al callback con los datos del usuario
+                    if (onSuccess) {
+                        onSuccess(userData);
+                    }
+                } else {
+                    console.log('No user_data found in URL');
+                    if (onError) {
+                        onError(new Error('No user data received'));
+                    }
                 }
             } else if (result.type === 'cancel') {
                 console.log('Auth cancelled by user');
+                if (onError) {
+                    onError(new Error('Authentication cancelled'));
+                }
             } else {
                 console.log('Auth failed:', result);
+                if (onError) {
+                    onError(new Error('Authentication failed'));
+                }
             }
         } catch (err) {
             console.error('Apple login error:', err);
+            if (onError) {
+                onError(err);
+            }
         } finally {
             setLoading(false);
         }
