@@ -1,5 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet, Linking } from 'react-native';
+import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 
 export type AppleLoginButtonProps = {
   orgToken: string;
@@ -10,7 +12,7 @@ export type AppleLoginButtonProps = {
 
 const AppleIcon = () => (
   <View style={styles.iconContainer}>
-    <Text style={{ fontSize: 20 }}></Text>
+    <Text style={{ fontSize: 20 }}>🍎</Text>
   </View>
 );
 
@@ -24,17 +26,43 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
   const baseUrl = 'https://services.cavos.xyz';
 
   const handleLogin = async () => {
+    console.log('Apple button pressed');
     setLoading(true);
     try {
+      console.log('Fetching Apple login URL...');
       const res = await fetch(`${baseUrl}/api/v1/external/auth/apple?network=${encodeURIComponent(network)}&final_redirect_uri=${encodeURIComponent(finalRedirectUri)}`, {
         headers: { Authorization: `Bearer ${orgToken}` },
       });
-      if (!res.ok) throw new Error('Failed to get Apple login URL');
+      console.log('Response status:', res.status);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Failed to get Apple login URL:', errorText);
+        throw new Error(`Failed to get Apple login URL: ${res.status} ${errorText}`);
+      }
       const data = await res.json();
-      const url = data.url;
-      Linking.openURL(url);
+      console.log('Apple login URL received:', data.url);
+      
+      console.log('Starting AuthSession...');
+      const result = await WebBrowser.openAuthSessionAsync(data.url, finalRedirectUri);
+      
+      console.log('AuthSession result:', result.type);
+      
+      if (result.type === 'success') {
+        console.log('Auth successful, extracting user data...');
+        const params = new URLSearchParams(result.url.split('?')[1]);
+        const userDataStr = params.get('user_data');
+        if (userDataStr) {
+          const userData = JSON.parse(decodeURIComponent(userDataStr));
+          console.log('User data extracted:', userData);
+          // El usuario puede manejar estos datos en su app
+        }
+      } else if (result.type === 'cancel') {
+        console.log('Auth cancelled by user');
+      } else {
+        console.log('Auth failed:', result);
+      }
     } catch (err) {
-      // Optionally handle error
+      console.error('Apple login error:', err);
     } finally {
       setLoading(false);
     }
