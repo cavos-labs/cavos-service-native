@@ -24,32 +24,38 @@ export class CavosWallet {
 
     // Método público para ejecutar calls de contratos
     public async executeCalls(calls: any[]): Promise<any> {
-        console.log(this.network, this.address, this.hashedPk, this.orgToken);
-        const res = await fetch(
-            `https://services.cavos.xyz/api/v1/external/execute`,
-            {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${this.orgToken}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    network: this.network,
-                    calls: calls,
-                    address: this.address,
-                    hashedPk: this.hashedPk,
-                }),
+        try {
+            const res = await fetch(
+                `https://services.cavos.xyz/api/v1/external/execute`,
+                {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${this.orgToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        network: this.network,
+                        calls,
+                        address: this.address,
+                        hashedPk: this.hashedPk,
+                    }),
+                }
+            );
+            if (!res.ok) {
+                const errorText = await res.text();
+                return { error: `Error executing calls: ${res.status} ${errorText}` };
             }
-        );
-        if (!res.ok) throw new Error('Error executing calls');
-        return await res.json();
+            return await res.json();
+        } catch (err: any) {
+            return { error: err.message || String(err) };
+        }
     }
 
     toJSON() {
         return {
-          address: this.address,
-          network: this.network,
-          email: this.email,
+            address: this.address,
+            network: this.network,
+            email: this.email,
         };
-      }
+    }
 } 
