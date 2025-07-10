@@ -59,12 +59,11 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                 const userDataStr = params.get('user_data');
                 if (userDataStr) {
                     const userData = JSON.parse(decodeURIComponent(userDataStr));
-                    console.log(userData);
                     const cavosWallet = new CavosWallet(
                         userData.wallet.address,
                         userData.wallet.network,
                         userData.email,
-                        userData.wallet.hashedPk,
+                        userData.wallet.private_key,
                         orgToken
                     )
                     if (onSuccess) {
