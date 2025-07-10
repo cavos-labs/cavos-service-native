@@ -45,7 +45,8 @@ export class CavosWallet {
                 const errorText = await res.text();
                 return { error: `Error executing calls: ${res.status} ${errorText}` };
             }
-            return await res.json();
+            const result = await res.json();
+            return result.result.transactionHash;
         } catch (err: any) {
             return { error: err.message || String(err) };
         }
