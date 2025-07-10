@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, Text, View, ActivityIndicator, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import Svg, { Path } from 'react-native-svg';
+import { CavosWallet } from './CavosWallet';
 
 export type AppleLoginButtonProps = {
     orgToken: string;
@@ -58,6 +59,13 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                 const userDataStr = params.get('user_data');
                 if (userDataStr) {
                     const userData = JSON.parse(decodeURIComponent(userDataStr));
+                    const cavosWallet = new CavosWallet(
+                        userData.wallet.address,
+                        userData.wallet.network,
+                        userData.email,
+                        userData.wallet.hashedPk,
+                        orgToken
+                    )
                     if (onSuccess) {
                         onSuccess(userData);
                     }
