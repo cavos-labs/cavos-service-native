@@ -67,7 +67,7 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                         orgToken
                     )
                     if (onSuccess) {
-                        onSuccess(userData);
+                        onSuccess(cavosWallet);
                     }
                 } else {
                     console.log('No user_data found in URL');
