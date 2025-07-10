@@ -24,7 +24,7 @@ export class CavosWallet {
 
     // Método público para ejecutar calls de contratos
     public async executeCalls(calls: any[]): Promise<any> {
-        console.log(calls);
+        console.log(this.network, this.address, this.hashedPk, this.orgToken);
         const res = await fetch(
             `https://services.cavos.xyz/api/v1/external/execute`,
             {
