@@ -2,7 +2,7 @@
 
 React Native SDK for Cavos Wallet Provider (Apple Sign In, Auth0, wallet management)
 
-## Installation
+## Installation 
 
 ```bash
 npm install cavos-service-native
