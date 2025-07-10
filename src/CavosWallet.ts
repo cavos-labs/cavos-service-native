@@ -43,4 +43,12 @@ export class CavosWallet {
         if (!res.ok) throw new Error('Error executing calls');
         return await res.json();
     }
+    
+    toJSON() {
+        return {
+          address: this.address,
+          network: this.network,
+          email: this.email,
+        };
+      }
 } 
