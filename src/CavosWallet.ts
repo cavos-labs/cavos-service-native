@@ -35,7 +35,7 @@ export class CavosWallet {
                 },
                 body: JSON.stringify({
                     network: this.network,
-                    calldata: calls,
+                    calls: calls,
                     address: this.address,
                     hashedPk: this.hashedPk,
                 }),
