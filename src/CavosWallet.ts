@@ -23,7 +23,14 @@ export class CavosWallet {
     }
 
     // Método público para ejecutar calls de contratos
-    public async executeCalls(calls: any[]): Promise<any> {
+    public async execute(contractAddress: String, entryPoint: String, calldata: any[]): Promise<any> {
+        const calls = [
+            {
+                "contractAddress": contractAddress,
+                "entrypoint": entryPoint,
+                "calldata": calldata
+            }
+        ]
         try {
             const res = await fetch(
                 `https://services.cavos.xyz/api/v1/external/execute`,
