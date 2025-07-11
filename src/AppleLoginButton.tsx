@@ -40,7 +40,6 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     const baseUrl = 'https://services.cavos.xyz';
 
     const handleLogin = async () => {
-        console.log('Apple button pressed');
         setLoading(true);
         try {
             const res = await fetch(`${baseUrl}/api/v1/external/auth/apple?network=${encodeURIComponent(network)}&final_redirect_uri=${encodeURIComponent(finalRedirectUri)}`, {
