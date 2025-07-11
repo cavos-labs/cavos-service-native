@@ -40,7 +40,7 @@ const GoogleIcon = () => (
 
 export const SignInWithGoogle: React.FC<GoogleLoginButtonProps> = ({
     orgToken,
-    network,
+    network = 'sepolia',
     finalRedirectUri,
     children,
     style,
@@ -62,34 +62,51 @@ export const SignInWithGoogle: React.FC<GoogleLoginButtonProps> = ({
                 console.error('Failed to get Google login URL:', errorText);
                 throw new Error(`Failed to get Google login URL: ${res.status} ${errorText}`);
             }
-            const data = await res.json();
+            
+            let data;
+            try {
+                data = await res.json();
+            } catch (parseError: any) {
+                console.error('Failed to parse response as JSON:', parseError);
+                const responseText = await res.text();
+                console.error('Response text:', responseText);
+                throw new Error(`Failed to parse response as JSON: ${parseError.message}. Response: ${responseText}`);
+            }
             console.log('Starting AuthSession...');
             const result = await WebBrowser.openAuthSessionAsync(data.url, finalRedirectUri);
             if (result.type === 'success') {
                 const params = new URLSearchParams(result.url.split('?')[1]);
                 const userDataStr = params.get('user_data');
                 if (userDataStr) {
-                    const userData = JSON.parse(decodeURIComponent(userDataStr));
-                    const authData = {
-                        accessToken: userData.authData.accessToken,
-                        refreshToken: userData.authData.refreshToken,
-                        expiresIn: userData.authData.expiresIn,
-                        timestamp: userData.authData.timestamp,
-                        user_id: userData.authData.user_id,
-                        email: userData.authData.email,
-                        org_id: userData.authData.org_id
-                    }
-                    const cavosWallet = new CavosWallet(
-                        userData.wallet.address,
-                        userData.wallet.network,
-                        userData.email,
-                        userData.user_id,
-                        userData.org_id,
-                        orgToken,
-                        authData
-                    )
-                    if (onSuccess) {
-                        onSuccess(cavosWallet);
+                    try {
+                        const userData = JSON.parse(decodeURIComponent(userDataStr));
+                        const authData = {
+                            accessToken: userData.authData.accessToken,
+                            refreshToken: userData.authData.refreshToken,
+                            expiresIn: userData.authData.expiresIn,
+                            timestamp: userData.authData.timestamp,
+                            user_id: userData.authData.user_id,
+                            email: userData.authData.email,
+                            org_id: userData.authData.org_id
+                        }
+                        const cavosWallet = new CavosWallet(
+                            userData.wallet.address,
+                            userData.wallet.network,
+                            userData.email,
+                            userData.user_id,
+                            userData.org_id,
+                            orgToken,
+                            authData
+                        )
+                        if (onSuccess) {
+                            onSuccess(cavosWallet);
+                        }
+                    } catch (parseError: any) {
+                        console.error('Failed to parse user data:', parseError);
+                        console.error('User data string:', userDataStr);
+                        if (onError) {
+                            onError(new Error(`Failed to parse user data: ${parseError.message}`));
+                        }
                     }
                 } else {
                     console.log('No user_data found in URL');

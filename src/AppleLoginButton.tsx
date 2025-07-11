@@ -28,7 +28,7 @@ const AppleIcon = () => (
 
 export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     orgToken,
-    network,
+    network = 'sepolia',
     finalRedirectUri,
     children,
     style,
