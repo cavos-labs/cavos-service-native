@@ -75,7 +75,18 @@ export const SignInWithGoogle: React.FC<GoogleLoginButtonProps> = ({
             console.log('Starting AuthSession...');
             const result = await WebBrowser.openAuthSessionAsync(data.url, finalRedirectUri);
             if (result.type === 'success') {
-                const params = new URLSearchParams(result.url.split('?')[1]);
+                // Support both query string and fragment for user_data
+                let paramsString = '';
+                if (result.url.includes('?')) {
+                    paramsString = result.url.split('?')[1].split('#')[0];
+                }
+                if (result.url.includes('#')) {
+                    if (paramsString.length > 0) {
+                        paramsString += '&';
+                    }
+                    paramsString += result.url.split('#')[1];
+                }
+                const params = new URLSearchParams(paramsString);
                 const userDataStr = params.get('user_data');
                 if (userDataStr) {
                     try {
