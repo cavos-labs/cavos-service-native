@@ -5,21 +5,21 @@ export class CavosWallet {
     public email: string;
 
     // Privados
-    private hashedPk: string;
-    private orgToken: string;
+    private orgId: string;
+    private sessionToken: string;
 
     constructor(
         address: string,
         network: string,
         email: string,
-        hashedPk: string,
-        orgToken: string,
+        orgId: string,
+        sessionToken: string
     ) {
         this.address = address;
         this.network = network;
         this.email = email;
-        this.hashedPk = hashedPk;
-        this.orgToken = orgToken;
+        this.orgId = orgId;
+        this.sessionToken = sessionToken;
     }
 
     // Método público para ejecutar calls de contratos
@@ -33,18 +33,18 @@ export class CavosWallet {
         ]
         try {
             const res = await fetch(
-                `https://services.cavos.xyz/api/v1/external/execute`,
+                `http://localhost:3000/api/v1/external/execute/session`,
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${this.orgToken}`,
+                        Authorization: `Bearer ${this.sessionToken}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        network: this.network,
-                        calls,
                         address: this.address,
-                        hashedPk: this.hashedPk,
+                        org_id: this.orgId,
+                        calls,
+                        network: this.network,
                     }),
                 }
             );

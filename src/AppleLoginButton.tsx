@@ -37,7 +37,7 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     onError
 }: AppleLoginButtonProps) => {
     const [loading, setLoading] = React.useState(false);
-    const baseUrl = 'https://services.cavos.xyz';
+    const baseUrl = 'http://localhost:3000';
 
     const handleLogin = async () => {
         console.log('Apple button pressed');
@@ -63,8 +63,8 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                         userData.wallet.address,
                         userData.wallet.network,
                         userData.email,
-                        userData.wallet.private_key,
-                        orgToken
+                        userData.org_id,
+                        userData.access_token
                     )
                     if (onSuccess) {
                         onSuccess(cavosWallet);
