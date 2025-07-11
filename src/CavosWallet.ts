@@ -33,7 +33,7 @@ export class CavosWallet {
         ]
         try {
             const res = await fetch(
-                `http://192.168.1.10:3000/api/v1/external/execute/session`,
+                `https://services.cavos.xyz/api/v1/external/execute/session`,
                 {
                     method: 'POST',
                     headers: {

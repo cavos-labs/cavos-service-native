@@ -37,7 +37,7 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     onError
 }: AppleLoginButtonProps) => {
     const [loading, setLoading] = React.useState(false);
-    const baseUrl = 'http://192.168.1.10:3000';
+    const baseUrl = 'https://services.cavos.xyz';
 
     const handleLogin = async () => {
         console.log('Apple button pressed');
