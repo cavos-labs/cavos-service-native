@@ -58,6 +58,7 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                 const userDataStr = params.get('user_data');
                 if (userDataStr) {
                     const userData = JSON.parse(decodeURIComponent(userDataStr));
+                    console.log(userData);
                     const authData = {
                         accessToken: userData.authData.access_token,
                         refreshToken: userData.authData.refresh_token,
