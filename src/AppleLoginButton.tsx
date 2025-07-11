@@ -113,10 +113,10 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
             disabled={loading}
             activeOpacity={0.8}
         >
+            <AppleIcon />
             <Text style={[styles.text, textStyle]} numberOfLines={1} ellipsizeMode="tail">
                 {children || 'Sign in with Apple'}
             </Text>
-            <AppleIcon />
             {loading && <ActivityIndicator size="small" color="#111" style={{ marginLeft: 8 }} />}
         </TouchableOpacity>
     );
