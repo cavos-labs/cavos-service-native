@@ -21,21 +21,116 @@ npm install cavos-service-native
 ### Apple Sign In
 
 ```typescript
-import { AppleLoginButton } from 'cavos-service-native';
+import { SignInWithApple } from 'cavos-service-native';
 
 // In your component
-<AppleLoginButton
-  orgSecret="your-org-secret"
+<SignInWithApple
+  orgToken="your-org-secret"
   network="sepolia"
+  finalRedirectUri="cavos://callback"
   onSuccess={(userData) => {
     console.log('Login successful:', userData);
-    // userData contains: user_id, email, wallet, access_token, refresh_token, expires_in
+    // Handle user data here
   }}
   onError={(error) => {
     console.error('Login failed:', error);
+    // Handle errors here
   }}
-/>
+>
+  Sign in with Apple
+</SignInWithApple>
 ```
+
+### Google Sign In
+
+```typescript
+import { SignInWithGoogle } from 'cavos-service-native';
+
+// In your component
+<SignInWithGoogle
+  orgToken="your-org-secret"
+  network="sepolia"
+  finalRedirectUri="cavos://callback"
+  onSuccess={(userData) => {
+    console.log('Login successful:', userData);
+    // Handle user data here
+  }}
+  onError={(error) => {
+    console.error('Login failed:', error);
+    // Handle errors here
+  }}
+>
+  Sign in with Google
+</SignInWithGoogle>
+```
+
+### Props
+
+- `orgToken`: Organization's secret token (Bearer token)
+- `network`: Network to use (e.g., 'sepolia', 'mainnet')
+- `finalRedirectUri`: URI to redirect the user after successful login (should be a registered deep link in your app, e.g., `cavos://callback`)
+- `children`: (optional) Custom button content
+- `onSuccess`: (optional) Function executed when login is successful. Receives user data as parameter
+- `onError`: (optional) Function executed when login fails. Receives error as parameter
+- `style`: (optional) Custom styles for the button
+- `textStyle`: (optional) Custom styles for the button text
+
+**Note:** User data is returned through the `onSuccess` callback function. The user data contains: `{ user_id, email, wallet, created_at, authData }`
+
+### Complete Login Example
+
+```typescript
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { SignInWithApple, SignInWithGoogle } from 'cavos-service-native';
+
+const LoginScreen = () => {
+  const handleLoginSuccess = (userData) => {
+    console.log('Login successful:', userData);
+    // Navigate to main app or store user data
+  };
+
+  const handleLoginError = (error) => {
+    console.error('Login failed:', error);
+    // Show error message to user
+  };
+
+  return (
+    <View style={styles.container}>
+      <SignInWithApple
+        orgToken="your-org-secret"
+        network="sepolia"
+        finalRedirectUri="cavos://callback"
+        onSuccess={handleLoginSuccess}
+        onError={handleLoginError}
+        style={styles.button}
+      />
+      
+      <SignInWithGoogle
+        orgToken="your-org-secret"
+        network="sepolia"
+        finalRedirectUri="cavos://callback"
+        onSuccess={handleLoginSuccess}
+        onError={handleLoginError}
+        style={styles.button}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    padding: 20,
+  },
+  button: {
+    width: '100%',
+    maxWidth: 300,
+  },
+});
 
 ### CavosWallet with Secure Token Storage
 
