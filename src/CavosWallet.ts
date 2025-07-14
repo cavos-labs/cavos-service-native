@@ -49,61 +49,16 @@ interface AuthData {
  * ```
  */
 export class CavosWallet {
-    /** Starknet wallet address */
     public address: string;
-    /** Network name (e.g., 'sepolia', 'mainnet') */
     public network: string;
-    /** User's email address */
     public email: string;
-    /** Auth0 user ID */
     public user_id: string;
-    /** Organization ID */
     public org_id: string;
+    public accessToken: string | null;
+    public refreshToken: string | null;
+    public tokenExpiry: number | null;
+    public orgSecret: string;
 
-    /** Current access token for API calls */
-    private accessToken: string | null = null;
-    /** Refresh token for token renewal */
-    private refreshToken: string | null = null;
-    /** Token expiration timestamp */
-    private tokenExpiry: number | null = null;
-    /** Organization secret for API authentication */
-    private orgSecret: string;
-
-    /** Storage key for secure token storage */
-    private static readonly STORAGE_KEY = 'cavos_auth_data';
-
-    /**
-     * Creates a new CavosWallet instance
-     * 
-     * @param address - Starknet wallet address
-     * @param network - Network name (e.g., 'sepolia', 'mainnet')
-     * @param email - User's email address
-     * @param user_id - Auth0 user ID
-     * @param org_id - Organization ID
-     * @param orgSecret - Organization secret for API authentication
-     * @param authData - Optional authentication data to initialize the wallet
-     * 
-     * @example
-     * ```typescript
-     * const wallet = new CavosWallet(
-     *   '0x1234567890abcdef...',
-     *   'sepolia',
-     *   'user@example.com',
-     *   'auth0|123456789',
-     *   'org-123',
-     *   'org-secret',
-     *   {
-     *     accessToken: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
-     *     refreshToken: 'v1.MEQBd...',
-     *     expiresIn: 3600,
-     *     timestamp: Date.now(),
-     *     user_id: 'auth0|123456789',
-     *     email: 'user@example.com',
-     *     org_id: 'org-123'
-     *   }
-     * );
-     * ```
-     */
     constructor(
         address: string,
         network: string,
@@ -111,7 +66,9 @@ export class CavosWallet {
         user_id: string,
         org_id: string,
         orgSecret: string,
-        authData?: AuthData
+        accessToken?: string | null,
+        refreshToken?: string | null,
+        tokenExpiry?: number | null
     ) {
         this.address = address;
         this.network = network;
@@ -119,67 +76,9 @@ export class CavosWallet {
         this.user_id = user_id;
         this.org_id = org_id;
         this.orgSecret = orgSecret;
-
-        if (authData) {
-            this.setAuthData(authData);
-        }
-    }
-
-    /**
-     * Sets authentication data in the wallet instance
-     * 
-     * @param authData - Authentication data to set
-     * @private
-     */
-    private setAuthData(authData: AuthData): void {
-        this.accessToken = authData.accessToken;
-        this.refreshToken = authData.refreshToken;
-        this.tokenExpiry = authData.timestamp + (authData.expiresIn * 1000);
-    }
-
-    /**
-     * Stores authentication data securely using Expo SecureStore
-     * 
-     * @param authData - Authentication data to store
-     * @throws {Error} If storage fails
-     * @private
-     */
-    private async storeAuthData(authData: AuthData): Promise<void> {
-        try {
-            const dataToStore = JSON.stringify(authData);
-            await SecureStore.setItemAsync(CavosWallet.STORAGE_KEY, dataToStore);
-            this.setAuthData(authData);
-        } catch (error) {
-            console.error('Error storing auth data:', error);
-            throw new Error('Failed to store authentication data securely');
-        }
-    }
-
-    /**
-     * Loads stored authentication data from secure storage
-     * 
-     * @returns Promise<boolean> - True if data was loaded successfully, false otherwise
-     * 
-     * @example
-     * ```typescript
-     * const hasStoredData = await wallet.loadStoredAuthData();
-     * if (hasStoredData) {
-     *   console.log('Stored authentication data loaded');
-     * }
-     * ```
-     */
-    public async loadStoredAuthData(): Promise<boolean> {
-        try {
-            const storedData = await SecureStore.getItemAsync(CavosWallet.STORAGE_KEY);
-            if (storedData) {
-                const authData: AuthData = JSON.parse(storedData);
-                this.setAuthData(authData);
-                return true;
-            }
-        } catch (error) {
-            console.error('Error loading stored auth data:', error);
-        }
-        return false;
+        this.accessToken = accessToken || null;
+        this.refreshToken = refreshToken || null;
+        this.tokenExpiry = tokenExpiry || null;
     }
 
     /**
@@ -236,8 +135,9 @@ export class CavosWallet {
                     email: result.data.email,
                     org_id: result.data.org_id
                 };
-
-                await this.storeAuthData(authData);
+                this.accessToken = authData.accessToken;
+                this.refreshToken = authData.refreshToken;
+                this.tokenExpiry = authData.timestamp + (authData.expiresIn * 1000);
                 return true;
             }
         } catch (error) {
@@ -284,7 +184,9 @@ export class CavosWallet {
      * ```
      */
     public async setAuthenticationData(authData: AuthData): Promise<void> {
-        await this.storeAuthData(authData);
+        this.accessToken = authData.accessToken;
+        this.refreshToken = authData.refreshToken;
+        this.tokenExpiry = authData.timestamp + (authData.expiresIn * 1000);
     }
 
     /**
@@ -297,14 +199,9 @@ export class CavosWallet {
      * ```
      */
     public async logout(): Promise<void> {
-        try {
-            await SecureStore.deleteItemAsync(CavosWallet.STORAGE_KEY);
-            this.accessToken = null;
-            this.refreshToken = null;
-            this.tokenExpiry = null;
-        } catch (error) {
-            console.error('Error during logout:', error);
-        }
+        this.accessToken = null;
+        this.refreshToken = null;
+        this.tokenExpiry = null;
     }
 
     /**
@@ -327,7 +224,7 @@ export class CavosWallet {
      */
     public async isAuthenticated(): Promise<boolean> {
         if (!this.accessToken) {
-            return await this.loadStoredAuthData();
+            return false; // No tokens, not authenticated
         }
         return !this.isTokenExpired();
     }
@@ -523,6 +420,10 @@ export class CavosWallet {
             email: this.email,
             user_id: this.user_id,
             org_id: this.org_id,
+            orgSecret: this.orgSecret,
+            accessToken: this.accessToken,
+            refreshToken: this.refreshToken,
+            tokenExpiry: this.tokenExpiry
         };
     }
 } 
