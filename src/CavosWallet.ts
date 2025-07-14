@@ -404,6 +404,41 @@ export class CavosWallet {
     }
 
 
+    public async executeCalls(calls: any[]): Promise<any> {
+        const accessToken = await this.getValidAccessToken();
+        if (!accessToken) {
+            return { error: 'Authentication required. Please login again.' };
+        }
+        try {
+            const res = await fetch(
+                `https://services.cavos.xyz/api/v1/external/execute/session`,
+                {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        address: this.address,
+                        org_id: this.org_id,
+                        calls,
+                        network: this.network,
+                    }),
+                }
+            );
+
+            if (!res.ok) {
+                const errorText = await res.text();
+                return { error: `Error executing calls: ${res.status} ${errorText}` };
+            }
+
+            const result = await res.json();
+            return result.result.result.transactionHash;
+        } catch (err: any) {
+            return { error: err.message || String(err) };
+        }
+    }
+
     public async swap(amount: number, sellTokenAddress: string, buyTokenAddress: string): Promise<any> {
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
