@@ -74,8 +74,10 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                         userData.user_id,
                         userData.org_id,
                         orgToken,
-                        authData
-                    )
+                        authData.accessToken,
+                        authData.refreshToken,
+                        authData.timestamp + (authData.expiresIn * 1000)
+                    );
                     if (onSuccess) {
                         onSuccess(cavosWallet);
                     }
