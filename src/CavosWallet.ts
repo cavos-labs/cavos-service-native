@@ -436,7 +436,7 @@ export class CavosWallet {
             }
 
             const result = await res.json();
-            return result.result.transactionHash;
+            return result.transactionHash;
         } catch (err: any) {
             return { error: err.message || String(err) };
         }
