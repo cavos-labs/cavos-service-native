@@ -26,6 +26,32 @@ const AppleIcon = () => (
     </View>
 );
 
+/**
+ * Apple Sign In button for Cavos Wallet authentication.
+ *
+ * Opens an Apple authentication flow and returns a CavosWallet instance on success.
+ *
+ * @component
+ * @param {string} orgToken - Organization's secret token (Bearer token)
+ * @param {string} network - Network to use (e.g., 'sepolia', 'mainnet')
+ * @param {string} finalRedirectUri - URI to redirect the user after successful login (should be a registered deep link in your app)
+ * @param {React.ReactNode} [children] - Custom button content
+ * @param {object} [style] - Custom styles for the button
+ * @param {object} [textStyle] - Custom styles for the button text
+ * @param {(userData: CavosWallet) => void} [onSuccess] - Callback executed when login is successful
+ * @param {(error: any) => void} [onError] - Callback executed when login fails
+ *
+ * @example
+ * <SignInWithApple
+ *   orgToken="your-org-secret"
+ *   network="sepolia"
+ *   finalRedirectUri="cavos://callback"
+ *   onSuccess={(wallet) => console.log(wallet)}
+ *   onError={(err) => console.error(err)}
+ * >
+ *   Sign in with Apple
+ * </SignInWithApple>
+ */
 export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     orgToken,
     network = 'sepolia',

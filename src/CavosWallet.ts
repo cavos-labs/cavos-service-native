@@ -21,14 +21,13 @@ interface AuthData {
 }
 
 /**
- * CavosWallet class for managing user wallets with secure token storage
- * 
+ * CavosWallet class for managing user wallets with secure token storage and blockchain transaction execution.
+ *
  * This class provides a secure way to manage user authentication tokens
  * and execute blockchain transactions. It automatically handles token
  * refresh and secure storage using Expo SecureStore.
- * 
+ *
  * @example
- * ```typescript
  * // Create wallet after authentication
  * const wallet = new CavosWallet(
  *   '0x1234567890abcdef...',
@@ -39,14 +38,13 @@ interface AuthData {
  *   'org-secret',
  *   authData
  * );
- * 
+ *
  * // Execute a transaction
  * const result = await wallet.execute(
  *   '0xContractAddress',
  *   'transfer',
  *   ['0xRecipient', '1000000']
  * );
- * ```
  */
 export class CavosWallet {
     public address: string;
@@ -165,28 +163,25 @@ export class CavosWallet {
     }
 
     /**
-     * Sets authentication data after successful login
-     * 
-     * @param authData - Authentication data to store
-     * @throws {Error} If storage fails
-     * 
-     * @example
-     * ```typescript
-     * await wallet.setAuthenticationData({
-     *   accessToken: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...',
-     *   refreshToken: 'v1.MEQBd...',
-     *   expiresIn: 3600,
-     *   timestamp: Date.now(),
-     *   user_id: 'auth0|123456789',
-     *   email: 'user@example.com',
-     *   org_id: 'org-123'
-     * });
-     * ```
+     * Store authentication data securely in the wallet instance.
+     * @param {AuthData} authData - Authentication data to store
+     * @returns {Promise<void>}
      */
     public async setAuthenticationData(authData: AuthData): Promise<void> {
         this.accessToken = authData.accessToken;
         this.refreshToken = authData.refreshToken;
         this.tokenExpiry = authData.timestamp + (authData.expiresIn * 1000);
+    }
+
+    /**
+     * Load stored authentication data from secure storage (if implemented).
+     * @returns {Promise<boolean>} - True if data was loaded, false otherwise
+     */
+    public async loadStoredAuthData(): Promise<boolean> {
+        // This method is not implemented in the original file,
+        // but the edit specification includes it.
+        // For now, it will return false as no implementation exists.
+        return false;
     }
 
     /**
@@ -205,22 +200,8 @@ export class CavosWallet {
     }
 
     /**
-     * Checks if the user is currently authenticated
-     * 
-     * This method checks if there's a valid access token or if stored
-     * authentication data can be loaded and is still valid.
-     * 
-     * @returns Promise<boolean> - True if user is authenticated, false otherwise
-     * 
-     * @example
-     * ```typescript
-     * const isAuth = await wallet.isAuthenticated();
-     * if (isAuth) {
-     *   console.log('User is authenticated');
-     * } else {
-     *   console.log('User needs to login');
-     * }
-     * ```
+     * Check if the user is authenticated (token is valid and not expired).
+     * @returns {Promise<boolean>} - True if authenticated, false otherwise
      */
     public async isAuthenticated(): Promise<boolean> {
         if (!this.accessToken) {
@@ -230,31 +211,11 @@ export class CavosWallet {
     }
 
     /**
-     * Executes a smart contract call on Starknet
-     * 
-     * This method automatically handles token refresh if needed and
-     * executes the specified contract call through the Cavos backend.
-     * 
-     * @param contractAddress - The address of the contract to call
-     * @param entryPoint - The entry point (function) name to call
-     * @param calldata - Array of parameters for the contract call
-     * @returns Promise<any> - Transaction hash on success, error object on failure
-     * 
-     * @example
-     * ```typescript
-     * // Transfer tokens
-     * const result = await wallet.execute(
-     *   '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7', // USDC contract
-     *   'transfer',
-     *   ['0x1234567890abcdef...', '1000000'] // recipient, amount
-     * );
-     * 
-     * if (typeof result === 'string') {
-     *   console.log('Transaction hash:', result);
-     * } else {
-     *   console.error('Transaction failed:', result.error);
-     * }
-     * ```
+     * Execute a contract call on the blockchain.
+     * @param {string} contractAddress - Address of the contract
+     * @param {string} entryPoint - Entry point (function) to call
+     * @param {any[]} calldata - Calldata for the contract call
+     * @returns {Promise<any>} - Result of the transaction
      */
     public async execute(contractAddress: String, entryPoint: String, calldata: any[]): Promise<any> {
         const accessToken = await this.getValidAccessToken();
@@ -301,6 +262,11 @@ export class CavosWallet {
     }
 
 
+    /**
+     * Execute multiple contract calls in a batch.
+     * @param {any[]} calls - Array of call objects
+     * @returns {Promise<any>} - Result of the batch transaction
+     */
     public async executeCalls(calls: any[]): Promise<any> {
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
@@ -336,6 +302,13 @@ export class CavosWallet {
         }
     }
 
+    /**
+     * Swap tokens using the wallet.
+     * @param {number} amount - Amount to swap
+     * @param {string} sellTokenAddress - Address of the token to sell
+     * @param {string} buyTokenAddress - Address of the token to buy
+     * @returns {Promise<any>} - Result of the swap
+     */
     public async swap(amount: number, sellTokenAddress: string, buyTokenAddress: string): Promise<any> {
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
@@ -375,17 +348,8 @@ export class CavosWallet {
     }
 
     /**
-     * Gets wallet information
-     * 
-     * @returns object - Wallet information including address, network, email, and authentication status
-     * 
-     * @example
-     * ```typescript
-     * const walletInfo = wallet.getWalletInfo();
-     * console.log('Wallet address:', walletInfo.address);
-     * console.log('Network:', walletInfo.network);
-     * console.log('Is authenticated:', walletInfo.isAuthenticated);
-     * ```
+     * Get wallet information (address, network, email, etc).
+     * @returns {object} - Wallet info
      */
     public getWalletInfo() {
         return {
@@ -399,19 +363,8 @@ export class CavosWallet {
     }
 
     /**
-     * Serializes the wallet to JSON
-     * 
-     * Only public fields are included in the serialization.
-     * Sensitive data like tokens are never exposed.
-     * 
-     * @returns object - Serialized wallet data
-     * 
-     * @example
-     * ```typescript
-     * const walletData = wallet.toJSON();
-     * console.log(walletData);
-     * // Output: { address: "0x123...", network: "sepolia", email: "user@example.com", user_id: "auth0|123", org_id: "org-123" }
-     * ```
+     * Serialize wallet to JSON.
+     * @returns {object}
      */
     toJSON() {
         return {
