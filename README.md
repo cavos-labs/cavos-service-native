@@ -1,5 +1,13 @@
 # Cavos Service Native
 
+> **⚠️ Important: Organization Registration Required**
+>
+> Before you can use the Cavos Service Native SDK, you must register your organization at [https://services.cavos.xyz](https://services.cavos.xyz). This process will provide you with your unique App ID and API Secret (orgToken), which are required for authentication and integration. Without registering your organization, you will not be able to use the SDK or access wallet services.
+>
+> - Go to [https://services.cavos.xyz](https://services.cavos.xyz) and create your organization.
+> - Save your App ID and API Secret securely. **Never expose your API Secret in public frontend code or repositories.**
+> - Use the App ID in SDK UI components and the API Secret (orgToken) for backend API calls or secure mobile environments.
+
 React Native SDK for Cavos Wallet Provider with Apple Sign In, Auth0 integration, and secure wallet management.
 
 ## Installation
@@ -30,7 +38,7 @@ npm install cavos-service-native
 import { SignInWithApple } from 'cavos-service-native';
 
 <SignInWithApple
-  orgToken="your-org-secret"
+  appId="your-org-app-id"
   network="sepolia"
   finalRedirectUri="cavos://callback"
   onSuccess={(wallet) => {
@@ -51,7 +59,7 @@ import { SignInWithApple } from 'cavos-service-native';
 import { SignInWithGoogle } from 'cavos-service-native';
 
 <SignInWithGoogle
-  orgToken="your-org-secret"
+  appId="your-org-app-id"
   network="sepolia"
   finalRedirectUri="cavos://callback"
   onSuccess={(wallet) => {
@@ -70,7 +78,7 @@ import { SignInWithGoogle } from 'cavos-service-native';
 
 | Prop              | Type                       | Required | Description                                                                 |
 |-------------------|----------------------------|----------|-----------------------------------------------------------------------------|
-| orgToken          | string                     | Yes      | Organization's secret token (Bearer token)                                  |
+| appId          | string                     | Yes      | Organization's app id                                  |
 | network           | string                     | Yes      | Network to use (e.g., 'sepolia', 'mainnet')                                 |
 | finalRedirectUri  | string                     | Yes      | Deep link URI to redirect after login (e.g., cavos://callback)              |
 | children          | React.ReactNode            | No       | Custom button content                                                       |
@@ -93,8 +101,7 @@ new CavosWallet(
   network: string,
   email: string,
   user_id: string,
-  org_id: string,
-  orgSecret: string,
+  app_id: string,
   accessToken?: string | null,
   refreshToken?: string | null,
   tokenExpiry?: number | null
@@ -110,23 +117,4 @@ new CavosWallet(
 - `executeCalls(calls: any[]): Promise<any>` — Execute multiple contract calls in a batch.
 - `swap(amount: number, sellTokenAddress: string, buyTokenAddress: string): Promise<any>` — Swap tokens using the wallet.
 - `getWalletInfo(): object` — Get wallet information (address, network, email, etc).
-- `logout(): Promise<void>` — Clear all stored authentication data.
-- `toJSON(): object` — Serialize wallet to JSON.
-
-#### AuthData Interface
-
-```typescript
-interface AuthData {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  timestamp: number;
-  user_id: string;
-  email: string;
-  org_id: string;
-}
-```
-
-## License
-
-MIT
+- `logout(): Promise<void>`
