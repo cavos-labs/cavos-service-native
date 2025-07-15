@@ -5,7 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 import { CavosWallet } from './CavosWallet';
 
 export type GoogleLoginButtonProps = {
-    orgToken: string;
+    appId: string;
     network: string;
     finalRedirectUri: string;
     children?: React.ReactNode;
@@ -44,7 +44,7 @@ const GoogleIcon = () => (
  * Opens a Google authentication flow and returns a CavosWallet instance on success.
  *
  * @component
- * @param {string} orgToken - Organization's secret token (Bearer token)
+ * @param {string} appId - Organization's app id
  * @param {string} network - Network to use (e.g., 'sepolia', 'mainnet')
  * @param {string} finalRedirectUri - URI to redirect the user after successful login (should be a registered deep link in your app)
  * @param {React.ReactNode} [children] - Custom button content
@@ -65,7 +65,7 @@ const GoogleIcon = () => (
  * </SignInWithGoogle>
  */
 export const SignInWithGoogle: React.FC<GoogleLoginButtonProps> = ({
-    orgToken,
+    appId,
     network = 'sepolia',
     finalRedirectUri,
     children,
@@ -80,9 +80,7 @@ export const SignInWithGoogle: React.FC<GoogleLoginButtonProps> = ({
     const handleLogin = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/v1/external/auth/google?network=${encodeURIComponent(network)}&final_redirect_uri=${encodeURIComponent(finalRedirectUri)}`, {
-                headers: { Authorization: `Bearer ${orgToken}` },
-            });
+            const res = await fetch(`${baseUrl}/api/v1/external/auth/google?network=${encodeURIComponent(network)}&final_redirect_uri=${encodeURIComponent(finalRedirectUri)}&app_id=${encodeURIComponent(appId)}`);
             if (!res.ok) {
                 const errorText = await res.text();
                 console.error('Failed to get Google login URL:', errorText);
@@ -132,7 +130,7 @@ export const SignInWithGoogle: React.FC<GoogleLoginButtonProps> = ({
                             userData.email,
                             userData.user_id,
                             userData.org_id,
-                            orgToken,
+                            appId,
                             authData.accessToken,
                             authData.refreshToken,
                             authData.timestamp + (authData.expiresIn * 1000)
