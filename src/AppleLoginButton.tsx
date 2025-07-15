@@ -5,7 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 import { CavosWallet } from './CavosWallet';
 
 export type AppleLoginButtonProps = {
-    orgToken: string;
+    appId: string;
     network: string;
     finalRedirectUri: string;
     children?: React.ReactNode;
@@ -26,8 +26,34 @@ const AppleIcon = () => (
     </View>
 );
 
+/**
+ * Apple Sign In button for Cavos Wallet authentication.
+ *
+ * Opens an Apple authentication flow and returns a CavosWallet instance on success.
+ *
+ * @component
+ * @param {string} appId - Organization's aplication id
+ * @param {string} network - Network to use (e.g., 'sepolia', 'mainnet')
+ * @param {string} finalRedirectUri - URI to redirect the user after successful login (should be a registered deep link in your app)
+ * @param {React.ReactNode} [children] - Custom button content
+ * @param {object} [style] - Custom styles for the button
+ * @param {object} [textStyle] - Custom styles for the button text
+ * @param {(userData: CavosWallet) => void} [onSuccess] - Callback executed when login is successful
+ * @param {(error: any) => void} [onError] - Callback executed when login fails
+ *
+ * @example
+ * <SignInWithApple
+ *   orgToken="your-org-secret"
+ *   network="sepolia"
+ *   finalRedirectUri="cavos://callback"
+ *   onSuccess={(wallet) => console.log(wallet)}
+ *   onError={(err) => console.error(err)}
+ * >
+ *   Sign in with Apple
+ * </SignInWithApple>
+ */
 export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
-    orgToken,
+    appId,
     network = 'sepolia',
     finalRedirectUri,
     children,
@@ -42,9 +68,7 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
     const handleLogin = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${baseUrl}/api/v1/external/auth/apple?network=${encodeURIComponent(network)}&final_redirect_uri=${encodeURIComponent(finalRedirectUri)}`, {
-                headers: { Authorization: `Bearer ${orgToken}` },
-            });
+            const res = await fetch(`${baseUrl}/api/v1/external/auth/apple?network=${encodeURIComponent(network)}&final_redirect_uri=${encodeURIComponent(finalRedirectUri)}&app_id=${encodeURIComponent(appId)}`);
             if (!res.ok) {
                 const errorText = await res.text();
                 console.error('Failed to get Apple login URL:', errorText);
@@ -73,9 +97,11 @@ export const SignInWithApple: React.FC<AppleLoginButtonProps> = ({
                         userData.email,
                         userData.user_id,
                         userData.org_id,
-                        orgToken,
-                        authData
-                    )
+                        appId,
+                        authData.accessToken,
+                        authData.refreshToken,
+                        authData.timestamp + (authData.expiresIn * 1000)
+                    );
                     if (onSuccess) {
                         onSuccess(cavosWallet);
                     }
