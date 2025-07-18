@@ -80,10 +80,10 @@ export class CavosWallet {
             const exp = decoded.exp;
             if (!exp) return true;
             console.log(exp);
-            console.log((new Date().getTime() + 1) / 1000);
-            if (exp < (new Date().getTime() + 1) / 1000) {
+            console.log(Date.now());
+            if (Date.now() >= exp * 1000) {
                 return false;
-            }
+              }
             else {
                 return true;
             }
