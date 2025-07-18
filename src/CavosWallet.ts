@@ -109,6 +109,7 @@ export class CavosWallet {
                 return false;
             }
             const data = await response.json();
+            console.log(data);
             this.accessToken = data.access_token;
             this.refreshToken = data.refresh_token;
             return true;
@@ -235,11 +236,6 @@ export class CavosWallet {
             } catch (err: any) {
                 return { error: err.message || 'Biometric authentication required.' };
             }
-        }
-        try {
-            await this.requireBiometricAuth();
-        } catch (err: any) {
-            return { error: err.message || 'Biometric authentication required.' };
         }
         const accessToken = await this.refreshAccessToken();
         if (!accessToken) {
