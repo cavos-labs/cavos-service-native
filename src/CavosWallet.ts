@@ -2,30 +2,23 @@ import Auth0 from 'react-native-auth0';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 /**
- * CavosWallet class for managing user wallets with secure token storage and blockchain transaction execution.
+ * CavosWallet class for secure wallet and token management.
  *
- * This class provides a secure way to manage user authentication tokens
- * and execute blockchain transactions. It automatically handles token
- * refresh and secure storage using Expo SecureStore.
+ * - Handles wallet info, access/refresh tokens, and blockchain operations.
+ * - Tokens are issued and rotated securely by the backend (never generated locally).
+ * - Supports biometric authentication for sensitive operations.
  *
  * @example
- * // Create wallet after authentication
- * const wallet = new CavosWallet(
- *   '0x1234567890abcdef...',
- *   'sepolia',
- *   'user@example.com',
- *   'auth0|123456789',
- *   'org-123',
- *   'org-secret',
- *   authData
- * );
+ * // After login:
+ * const wallet = new CavosWallet(address, network, email, user_id, org_id, orgSecret, accessToken, refreshToken);
  *
- * // Execute a transaction
- * const result = await wallet.execute(
- *   '0xContractAddress',
- *   'transfer',
- *   ['0xRecipient', '1000000']
- * );
+ * // Before API call:
+ * if (wallet.isTokenExpired()) {
+ *   await wallet.refreshAccessToken();
+ * }
+ *
+ * // Execute a transaction:
+ * await wallet.execute(contractAddress, 'transfer', [to, amount], true); // true = require biometrics
  */
 export class CavosWallet {
     public address: string;
@@ -58,13 +51,9 @@ export class CavosWallet {
     }
 
     /**
-     * Checks if the current access token has expired
-     * 
-     * Decodifica el JWT y verifica el campo exp.
-     * Tokens son considerados expirados si falta el token o si exp < ahora.
-     * 
-     * @returns boolean - True if token is expired or missing, false otherwise
-     * @private
+     * Checks if the current access token has expired.
+     * Decodes the JWT and checks the exp field.
+     * @returns {boolean} True if token is expired or missing, false otherwise.
      */
     private isTokenExpired(): boolean {
         if (!this.accessToken) {
@@ -75,8 +64,6 @@ export class CavosWallet {
             const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
             const exp = decoded.exp;
             if (!exp) return true;
-            console.log(exp);
-            console.log(Date.now());
             if (Date.now() <= exp * 1000) {
                 return false;
             }
@@ -89,10 +76,9 @@ export class CavosWallet {
     }
 
     /**
-     * Refreshes the access token using the backend refresh endpoint
-     * 
-     * @returns Promise<boolean> - True if refresh was successful, false otherwise
-     * @private
+     * Refreshes the access token using the backend refresh endpoint.
+     * Updates both access and refresh tokens if successful.
+     * @returns {Promise<boolean>} True if refresh was successful, false otherwise.
      */
     private async refreshAccessToken(): Promise<boolean> {
         try {
@@ -109,7 +95,6 @@ export class CavosWallet {
                 return false;
             }
             const data = await response.json();
-            console.log(data);
             this.accessToken = data.access_token;
             this.refreshToken = data.refresh_token;
             return true;
@@ -120,24 +105,9 @@ export class CavosWallet {
     }
 
     /**
-     * Gets a valid access token, refreshing it if necessary
-     * 
-     * @returns Promise<string | null> - Valid access token or null if refresh failed
-     * @private
-     */
-    private async getValidAccessToken(): Promise<string | null> {
-        if (this.isTokenExpired()) {
-            const refreshSuccess = await this.refreshAccessToken();
-            if (!refreshSuccess) {
-                return null;
-            }
-        }
-
-        return this.accessToken;
-    }
-
-    /**
-     * Solicita autenticación biométrica antes de operaciones sensibles
+     * Prompts for biometric authentication before sensitive operations.
+     * Throws if authentication fails or is unavailable.
+     * @returns {Promise<void>}
      */
     private async requireBiometricAuth(): Promise<void> {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
@@ -155,8 +125,8 @@ export class CavosWallet {
     }
 
     /**
-     * Check if the user is authenticated (token is valid and not expired).
-     * @returns {Promise<boolean>} - True if authenticated, false otherwise
+     * Checks if the user is authenticated (token is valid and not expired).
+     * @returns {Promise<boolean>} True if authenticated, false otherwise.
      */
     public async isAuthenticated(): Promise<boolean> {
         if (!this.accessToken) {
@@ -170,7 +140,8 @@ export class CavosWallet {
      * @param {string} contractAddress - Address of the contract
      * @param {string} entryPoint - Entry point (function) to call
      * @param {any[]} calldata - Calldata for the contract call
-     * @returns {Promise<any>} - Result of the transaction
+     * @param {boolean} [bioAuth=false] - Require biometric authentication
+     * @returns {Promise<any>} Result of the transaction
      */
     public async execute(contractAddress: String, entryPoint: String, calldata: any[], bioAuth: boolean = false): Promise<any> {
         if (bioAuth) {
@@ -227,7 +198,8 @@ export class CavosWallet {
     /**
      * Execute multiple contract calls in a batch.
      * @param {any[]} calls - Array of call objects
-     * @returns {Promise<any>} - Result of the batch transaction
+     * @param {boolean} [bioAuth=false] - Require biometric authentication
+     * @returns {Promise<any>} Result of the batch transaction
      */
     public async executeCalls(calls: any[], bioAuth: boolean = false): Promise<any> {
         if (bioAuth) {
@@ -276,7 +248,8 @@ export class CavosWallet {
      * @param {number} amount - Amount to swap
      * @param {string} sellTokenAddress - Address of the token to sell
      * @param {string} buyTokenAddress - Address of the token to buy
-     * @returns {Promise<any>} - Result of the swap
+     * @param {boolean} [bioAuth=false] - Require biometric authentication
+     * @returns {Promise<any>} Result of the swap
      */
     public async swap(amount: number, sellTokenAddress: string, buyTokenAddress: string, bioAuth: boolean = false): Promise<any> {
         if (bioAuth) {
@@ -325,7 +298,7 @@ export class CavosWallet {
 
     /**
      * Get wallet information (address, network, email, etc).
-     * @returns {object} - Wallet info
+     * @returns {object} Wallet info
      */
     public getWalletInfo() {
         return {
@@ -342,7 +315,7 @@ export class CavosWallet {
      * Serialize wallet to JSON.
      * @returns {object}
      */
-    toJSON() {
+    public toJSON() {
         return {
             address: this.address,
             network: this.network,
