@@ -1,24 +1,4 @@
-import * as SecureStore from 'expo-secure-store';
-
-/**
- * Interface for authentication data structure
- */
-interface AuthData {
-    /** Auth0 access token for API authentication */
-    accessToken: string;
-    /** Auth0 refresh token for token renewal */
-    refreshToken: string;
-    /** Token expiration time in seconds */
-    expiresIn: number;
-    /** Timestamp when the auth data was created */
-    timestamp: number;
-    /** Auth0 user ID */
-    user_id: string;
-    /** User's email address */
-    email: string;
-    /** Organization ID */
-    org_id: string;
-}
+import Auth0 from 'react-native-auth0';
 
 /**
  * CavosWallet class for managing user wallets with secure token storage and blockchain transaction execution.
@@ -53,9 +33,10 @@ export class CavosWallet {
     public user_id: string;
     public org_id: string;
     public accessToken: string | null;
-    public refreshToken: string | null;
-    public tokenExpiry: number | null;
     public orgSecret: string;
+    public clientId: string;
+    public domain: string;
+    private auth0: any;
 
     constructor(
         address: string,
@@ -64,9 +45,9 @@ export class CavosWallet {
         user_id: string,
         org_id: string,
         orgSecret: string,
+        clientId: string,
+        domain: string,
         accessToken?: string | null,
-        refreshToken?: string | null,
-        tokenExpiry?: number | null
     ) {
         this.address = address;
         this.network = network;
@@ -74,75 +55,59 @@ export class CavosWallet {
         this.user_id = user_id;
         this.org_id = org_id;
         this.orgSecret = orgSecret;
+        this.clientId = clientId;
+        this.domain = domain;
         this.accessToken = accessToken || null;
-        this.refreshToken = refreshToken || null;
-        this.tokenExpiry = tokenExpiry || null;
+        this.auth0 = new Auth0({ domain: this.domain, clientId: this.clientId });
     }
 
     /**
      * Checks if the current access token has expired
      * 
-     * Tokens are considered expired 5 minutes before their actual expiration
-     * to allow for automatic refresh.
+     * Decodifica el JWT y verifica el campo exp.
+     * Tokens son considerados expirados si falta el token o si exp < ahora.
      * 
      * @returns boolean - True if token is expired or missing, false otherwise
      * @private
      */
     private isTokenExpired(): boolean {
-        if (!this.tokenExpiry || !this.accessToken) {
+        if (!this.accessToken) {
             return true;
         }
-        // Refrescar 5 minutos antes de que expire
-        return Date.now() >= (this.tokenExpiry - 300000);
+        try {
+            const payload = this.accessToken.split('.')[1];
+            const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+            const exp = decoded.exp;
+            if (!exp) return true;
+            const now = Math.floor(Date.now() / 1000);
+            return (exp - now) < 300;
+        } catch (e) {
+            return true;
+        }
     }
 
     /**
-     * Refreshes the access token using the refresh token
+     * Refreshes the access token using silent authentication (Auth0 webAuth.authorize)
      * 
      * @returns Promise<boolean> - True if refresh was successful, false otherwise
      * @private
      */
     private async refreshAccessToken(): Promise<boolean> {
-        if (!this.refreshToken) {
+        try {
+            // Intenta obtener un nuevo token usando silent auth
+            const credentials = await this.auth0.webAuth.authorize({
+                scope: 'openid profile email',
+                audience: undefined, // O tu API_IDENTIFIER si usas API propia
+                prompt: 'none',
+            });
+            this.accessToken = credentials.accessToken;
+            // Si necesitas el id_token:
+            // this.idToken = credentials.idToken;
+            return true;
+        } catch (error) {
+            console.error('Silent auth/token refresh failed:', error);
             return false;
         }
-
-        try {
-            const response = await fetch(
-                'https://services.cavos.xyz/api/v1/external/auth/refresh',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${this.orgSecret}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        refresh_token: this.refreshToken
-                    }),
-                }
-            );
-
-            if (response.ok) {
-                const result = await response.json();
-                const authData: AuthData = {
-                    accessToken: result.data.access_token,
-                    refreshToken: result.data.refresh_token,
-                    expiresIn: result.data.expires_in,
-                    timestamp: Date.now(),
-                    user_id: result.data.user_id,
-                    email: result.data.email,
-                    org_id: result.data.org_id
-                };
-                this.accessToken = authData.accessToken;
-                this.refreshToken = authData.refreshToken;
-                this.tokenExpiry = authData.timestamp + (authData.expiresIn * 1000);
-                return true;
-            }
-        } catch (error) {
-            console.error('Token refresh failed:', error);
-        }
-
-        return false;
     }
 
     /**
@@ -160,43 +125,6 @@ export class CavosWallet {
         }
 
         return this.accessToken;
-    }
-
-    /**
-     * Store authentication data securely in the wallet instance.
-     * @param {AuthData} authData - Authentication data to store
-     * @returns {Promise<void>}
-     */
-    public async setAuthenticationData(authData: AuthData): Promise<void> {
-        this.accessToken = authData.accessToken;
-        this.refreshToken = authData.refreshToken;
-        this.tokenExpiry = authData.timestamp + (authData.expiresIn * 1000);
-    }
-
-    /**
-     * Load stored authentication data from secure storage (if implemented).
-     * @returns {Promise<boolean>} - True if data was loaded, false otherwise
-     */
-    public async loadStoredAuthData(): Promise<boolean> {
-        // This method is not implemented in the original file,
-        // but the edit specification includes it.
-        // For now, it will return false as no implementation exists.
-        return false;
-    }
-
-    /**
-     * Logs out the user and clears all stored authentication data
-     * 
-     * @example
-     * ```typescript
-     * await wallet.logout();
-     * // All tokens are now cleared from secure storage
-     * ```
-     */
-    public async logout(): Promise<void> {
-        this.accessToken = null;
-        this.refreshToken = null;
-        this.tokenExpiry = null;
     }
 
     /**
@@ -375,8 +303,6 @@ export class CavosWallet {
             org_id: this.org_id,
             orgSecret: this.orgSecret,
             accessToken: this.accessToken,
-            refreshToken: this.refreshToken,
-            tokenExpiry: this.tokenExpiry
         };
     }
 } 

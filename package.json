@@ -28,6 +28,7 @@
     "expo-auth-session": "^6.2.1",
     "expo-secure-store": "^14.2.3",
     "expo-web-browser": "^14.2.0",
+    "react-native-auth0": "^4.6.0",
     "react-native-svg": "^15.11.2"
   },
   "devDependencies": {
