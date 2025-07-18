@@ -179,7 +179,7 @@ export class CavosWallet {
                 return { error: err.message || 'Biometric authentication required.' };
             }
         }
-        const accessToken = await this.getValidAccessToken();
+        const accessToken = await this.refreshAccessToken();
         if (!accessToken) {
             return { error: 'Authentication required. Please login again.' };
         }
@@ -198,7 +198,7 @@ export class CavosWallet {
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${accessToken}`,
+                        Authorization: `Bearer ${this.accessToken}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
@@ -241,7 +241,7 @@ export class CavosWallet {
         } catch (err: any) {
             return { error: err.message || 'Biometric authentication required.' };
         }
-        const accessToken = await this.getValidAccessToken();
+        const accessToken = await this.refreshAccessToken();
         if (!accessToken) {
             return { error: 'Authentication required. Please login again.' };
         }
@@ -251,7 +251,7 @@ export class CavosWallet {
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${accessToken}`,
+                        Authorization: `Bearer ${this.accessToken}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
@@ -290,7 +290,7 @@ export class CavosWallet {
                 return { error: err.message || 'Biometric authentication required.' };
             }
         }
-        const accessToken = await this.getValidAccessToken();
+        const accessToken = await this.refreshAccessToken();
         if (!accessToken) {
             return { error: 'Authentication required. Please login again.' };
         }
@@ -301,7 +301,7 @@ export class CavosWallet {
                 {
                     method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${accessToken}`,
+                        Authorization: `Bearer ${this.accessToken}`,
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
