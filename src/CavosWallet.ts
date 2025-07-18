@@ -1,4 +1,5 @@
 import Auth0 from 'react-native-auth0';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 /**
  * CavosWallet class for managing user wallets with secure token storage and blockchain transaction execution.
@@ -81,9 +82,9 @@ export class CavosWallet {
             if (!exp) return true;
             console.log(exp);
             console.log(Date.now());
-            if (Date.now() >= exp * 1000) {
+            if (Date.now() <= exp * 1000) {
                 return false;
-              }
+            }
             else {
                 return true;
             }
@@ -107,8 +108,6 @@ export class CavosWallet {
                 prompt: 'none',
             });
             this.accessToken = credentials.accessToken;
-            // Si necesitas el id_token:
-            // this.idToken = credentials.idToken;
             return true;
         } catch (error) {
             console.error('Silent auth/token refresh failed:', error);
@@ -134,6 +133,24 @@ export class CavosWallet {
     }
 
     /**
+     * Solicita autenticación biométrica antes de operaciones sensibles
+     */
+    private async requireBiometricAuth(): Promise<void> {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        if (!hasHardware || !isEnrolled) {
+            throw new Error('No biometric authentication available');
+        }
+        const result = await LocalAuthentication.authenticateAsync({
+            promptMessage: 'Confirma tu identidad para continuar',
+            fallbackLabel: 'Usar PIN',
+        });
+        if (!result.success) {
+            throw new Error('Biometric authentication failed');
+        }
+    }
+
+    /**
      * Check if the user is authenticated (token is valid and not expired).
      * @returns {Promise<boolean>} - True if authenticated, false otherwise
      */
@@ -152,6 +169,11 @@ export class CavosWallet {
      * @returns {Promise<any>} - Result of the transaction
      */
     public async execute(contractAddress: String, entryPoint: String, calldata: any[]): Promise<any> {
+        try {
+            await this.requireBiometricAuth();
+        } catch (err: any) {
+            return { error: err.message || 'Biometric authentication required.' };
+        }
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
             return { error: 'Authentication required. Please login again.' };
@@ -202,6 +224,11 @@ export class CavosWallet {
      * @returns {Promise<any>} - Result of the batch transaction
      */
     public async executeCalls(calls: any[]): Promise<any> {
+        try {
+            await this.requireBiometricAuth();
+        } catch (err: any) {
+            return { error: err.message || 'Biometric authentication required.' };
+        }
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
             return { error: 'Authentication required. Please login again.' };
@@ -244,6 +271,11 @@ export class CavosWallet {
      * @returns {Promise<any>} - Result of the swap
      */
     public async swap(amount: number, sellTokenAddress: string, buyTokenAddress: string): Promise<any> {
+        try {
+            await this.requireBiometricAuth();
+        } catch (err: any) {
+            return { error: err.message || 'Biometric authentication required.' };
+        }
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
             return { error: 'Authentication required. Please login again.' };
