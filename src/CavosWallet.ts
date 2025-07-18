@@ -79,8 +79,14 @@ export class CavosWallet {
             const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
             const exp = decoded.exp;
             if (!exp) return true;
-            const now = Math.floor(Date.now() / 1000);
-            return (exp - now) < 300;
+            console.log(exp);
+            console.log((new Date().getTime() + 1) / 1000);
+            if (exp < (new Date().getTime() + 1) / 1000) {
+                return false;
+            }
+            else {
+                return true;
+            }
         } catch (e) {
             return true;
         }
