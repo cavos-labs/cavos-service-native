@@ -1,6 +1,6 @@
 {
   "name": "cavos-service-native",
-  "version": "1.2.14",
+  "version": "1.2.26",
   "description": "React Native SDK for Cavos Wallet Provider (Apple Sign In, Auth0, wallet management)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,8 +26,10 @@
   },
   "dependencies": {
     "expo-auth-session": "^6.2.1",
+    "expo-local-authentication": "^16.0.5",
     "expo-secure-store": "^14.2.3",
     "expo-web-browser": "^14.2.0",
+    "react-native-auth0": "^4.6.0",
     "react-native-svg": "^15.11.2"
   },
   "devDependencies": {
