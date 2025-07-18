@@ -33,11 +33,9 @@ export class CavosWallet {
     public email: string;
     public user_id: string;
     public org_id: string;
-    public accessToken: string | null;
+    public accessToken: string;
+    public refreshToken: string;
     public orgSecret: string;
-    public clientId: string;
-    public domain: string;
-    private auth0: any;
 
     constructor(
         address: string,
@@ -46,9 +44,8 @@ export class CavosWallet {
         user_id: string,
         org_id: string,
         orgSecret: string,
-        clientId: string,
-        domain: string,
-        accessToken?: string | null,
+        accessToken: string,
+        refreshToken: string,
     ) {
         this.address = address;
         this.network = network;
@@ -56,10 +53,8 @@ export class CavosWallet {
         this.user_id = user_id;
         this.org_id = org_id;
         this.orgSecret = orgSecret;
-        this.clientId = clientId;
-        this.domain = domain;
-        this.accessToken = accessToken || null;
-        this.auth0 = new Auth0({ domain: this.domain, clientId: this.clientId });
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
     }
 
     /**
@@ -94,23 +89,31 @@ export class CavosWallet {
     }
 
     /**
-     * Refreshes the access token using silent authentication (Auth0 webAuth.authorize)
+     * Refreshes the access token using the backend refresh endpoint
      * 
      * @returns Promise<boolean> - True if refresh was successful, false otherwise
      * @private
      */
     private async refreshAccessToken(): Promise<boolean> {
         try {
-            // Intenta obtener un nuevo token usando silent auth
-            const credentials = await this.auth0.webAuth.authorize({
-                scope: 'openid profile email',
-                audience: undefined, // O tu API_IDENTIFIER si usas API propia
-                prompt: 'none',
+            const response = await fetch('https://services.cavos.xyz/api/v1/external/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    refresh_token: this.refreshToken,
+                }),
             });
-            this.accessToken = credentials.accessToken;
+            if (!response.ok) {
+                return false;
+            }
+            const data = await response.json();
+            this.accessToken = data.access_token;
+            this.refreshToken = data.refresh_token;
             return true;
         } catch (error) {
-            console.error('Silent auth/token refresh failed:', error);
+            console.error('Token refresh failed:', error);
             return false;
         }
     }
@@ -168,11 +171,13 @@ export class CavosWallet {
      * @param {any[]} calldata - Calldata for the contract call
      * @returns {Promise<any>} - Result of the transaction
      */
-    public async execute(contractAddress: String, entryPoint: String, calldata: any[]): Promise<any> {
-        try {
-            await this.requireBiometricAuth();
-        } catch (err: any) {
-            return { error: err.message || 'Biometric authentication required.' };
+    public async execute(contractAddress: String, entryPoint: String, calldata: any[], bioAuth: boolean = false): Promise<any> {
+        if (bioAuth) {
+            try {
+                await this.requireBiometricAuth();
+            } catch (err: any) {
+                return { error: err.message || 'Biometric authentication required.' };
+            }
         }
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
@@ -223,7 +228,14 @@ export class CavosWallet {
      * @param {any[]} calls - Array of call objects
      * @returns {Promise<any>} - Result of the batch transaction
      */
-    public async executeCalls(calls: any[]): Promise<any> {
+    public async executeCalls(calls: any[], bioAuth: boolean = false): Promise<any> {
+        if (bioAuth) {
+            try {
+                await this.requireBiometricAuth();
+            } catch (err: any) {
+                return { error: err.message || 'Biometric authentication required.' };
+            }
+        }
         try {
             await this.requireBiometricAuth();
         } catch (err: any) {
@@ -270,11 +282,13 @@ export class CavosWallet {
      * @param {string} buyTokenAddress - Address of the token to buy
      * @returns {Promise<any>} - Result of the swap
      */
-    public async swap(amount: number, sellTokenAddress: string, buyTokenAddress: string): Promise<any> {
-        try {
-            await this.requireBiometricAuth();
-        } catch (err: any) {
-            return { error: err.message || 'Biometric authentication required.' };
+    public async swap(amount: number, sellTokenAddress: string, buyTokenAddress: string, bioAuth: boolean = false): Promise<any> {
+        if (bioAuth) {
+            try {
+                await this.requireBiometricAuth();
+            } catch (err: any) {
+                return { error: err.message || 'Biometric authentication required.' };
+            }
         }
         const accessToken = await this.getValidAccessToken();
         if (!accessToken) {
