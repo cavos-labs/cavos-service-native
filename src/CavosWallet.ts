@@ -1,4 +1,3 @@
-import Auth0 from 'react-native-auth0';
 import * as LocalAuthentication from 'expo-local-authentication';
 
 /**
@@ -51,25 +50,23 @@ export class CavosWallet {
     }
 
     /**
-     * Checks if the current access token has expired.
-     * Decodes the JWT and checks the exp field.
-     * @returns {boolean} True if token is expired or missing, false otherwise.
+     * Checks if the current access token has expired or is used, by calling the backend /token/check endpoint.
+     * @returns {Promise<boolean>} True if token is expired/used/invalid, false otherwise.
      */
-    private isTokenExpired(): boolean {
+    private async isTokenExpired(): Promise<boolean> {
         if (!this.accessToken) {
             return true;
         }
         try {
-            const payload = this.accessToken.split('.')[1];
-            const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-            const exp = decoded.exp;
-            if (!exp) return true;
-            if (Date.now() <= exp * 1000) {
-                return false;
-            }
-            else {
-                return true;
-            }
+            const response = await fetch('https://services.cavos.xyz/api/v1/external/auth/token/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ access_token: this.accessToken }),
+            });
+            if (!response.ok) return true;
+            const data = await response.json();
+            // If token is expired, used, or not valid, treat as expired
+            return data.expired || data.used || !data.valid;
         } catch (e) {
             return true;
         }
@@ -82,7 +79,7 @@ export class CavosWallet {
      */
     private async refreshAccessToken(): Promise<boolean> {
         try {
-            const response = await fetch('https://services.cavos.xyz/api/v1/external/auth/refresh', {
+            const response = await fetch('https://services.cavos.xyz/api/v1/external/auth/token/refresh', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -151,11 +148,6 @@ export class CavosWallet {
                 return { error: err.message || 'Biometric authentication required.' };
             }
         }
-        const accessToken = await this.refreshAccessToken();
-        if (!accessToken) {
-            return { error: 'Authentication required. Please login again.' };
-        }
-
         const calls = [
             {
                 "contractAddress": contractAddress,
@@ -209,10 +201,6 @@ export class CavosWallet {
                 return { error: err.message || 'Biometric authentication required.' };
             }
         }
-        const accessToken = await this.refreshAccessToken();
-        if (!accessToken) {
-            return { error: 'Authentication required. Please login again.' };
-        }
         try {
             const res = await fetch(
                 `https://services.cavos.xyz/api/v1/external/execute/session`,
@@ -259,11 +247,6 @@ export class CavosWallet {
                 return { error: err.message || 'Biometric authentication required.' };
             }
         }
-        const accessToken = await this.refreshAccessToken();
-        if (!accessToken) {
-            return { error: 'Authentication required. Please login again.' };
-        }
-
         try {
             const res = await fetch(
                 `https://services.cavos.xyz/api/v1/external/execute/session/swap`,
