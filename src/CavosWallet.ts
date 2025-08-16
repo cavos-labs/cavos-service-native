@@ -293,20 +293,4 @@ export class CavosWallet {
             isAuthenticated: this.accessToken !== null
         };
     }
-
-    /**
-     * Serialize wallet to JSON.
-     * @returns {object}
-     */
-    public toJSON() {
-        return {
-            address: this.address,
-            network: this.network,
-            email: this.email,
-            user_id: this.user_id,
-            org_id: this.org_id,
-            orgSecret: this.orgSecret,
-            accessToken: this.accessToken,
-        };
-    }
 } 
